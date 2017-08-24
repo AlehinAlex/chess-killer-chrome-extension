@@ -35,9 +35,9 @@ class EngineConnect {
             cb(result);
         }, 1000);
 
-        setTimeout(() => {
-            this.child.stdin.end();
-        }, delay);
+        // setTimeout(() => {
+        //     this.child.stdin.end();
+        // }, delay);
 
     }
 }
