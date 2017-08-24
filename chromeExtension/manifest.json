@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Chess killer Chrome extension",
+  "version": "0.1.1",
+  "browser_action": {
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://lichess.org/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
+}
