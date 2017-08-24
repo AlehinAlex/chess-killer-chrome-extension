@@ -7,7 +7,7 @@
   "homepage": "https://github.com/cvgellhorn/webpack-boilerplate",
   "scripts": {
     "build": "webpack -w --progress --config webpack.config.js",
-    "run server": "node server/server.js"
+    "server": "node server/server.js"
   },
   "repository": {
     "type": "git",
