@@ -1,7 +1,7 @@
 import * as $ from 'jquery';
 import * as io from "socket.io-client";
 const Chess = require('chess.js');
-const HOST = 'https://localhost:5000/';
+const HOST = 'https://chess-analysis.ddns.net:5000/';
 const $banner = $('<div style="position: absolute;top:0;left:0;width:100%;height:30px;background-color: beige;"></div>');
 
 
