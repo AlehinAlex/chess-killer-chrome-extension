@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChessKiller</title>
+</head>
+<body>
+<div id="txt"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+<script>
+    var socket = io();
+    var fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    socket.emit('new_move', {FEN: fen});
+    socket.on('on_result', function (data) {
+        console.log(data);
+        document.getElementById("txt").innerHTML = data.data;
+    })
+</script>
+
+</body>
+</html>
