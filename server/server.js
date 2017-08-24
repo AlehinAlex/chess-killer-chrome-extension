@@ -63,7 +63,8 @@ io.on('connection', (socket) => {
     console.log('a user connected', socket.id);
 
     socket.on('new_move', (data) => {
-        engine = new EngineConnect(__dirname + '/stockfish', []);
+        engine = new EngineConnect('/usr/games/stockfish', []);
+        // engine = new EngineConnect(__dirname + '/stockfish', []);
         engine.run(data.FEN, 20000, (bestmove) => {
             socket.emit('on_result', {fen: data.FEN, data: bestmove});
         });
