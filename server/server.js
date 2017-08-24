@@ -2,6 +2,8 @@ const app = require('express')();
 const https = require('https');
 const fs = require('fs');
 const PORT = 5000;
+const STOCKFISH_PATH = '/usr/games/stockfish';
+// const STOCKFISH_PATH = __dirname + '/stockfish';
 const spawn = require('child_process').spawn;
 
 
@@ -9,30 +11,34 @@ class EngineConnect {
     constructor(cmd, args) {
         this.cmd = cmd;
         this.args = args;
+        this.child = spawn(this.cmd, this.args);
     }
 
-    run(fen, delay, cb) {
+    findBestMove(fen, delay, cb) {
         let result = '';
         if (this.loop) {
             clearInterval(this.loop);
         }
 
-        const child = spawn(this.cmd, this.args);
-
-        child.stdout.on('data', function (buffer) {
+        this.child.stdout.on('data', function (buffer) {
             this.stdout += buffer.toString();
             result = this.stdout;
         });
 
-        child.stdout.on('end', function () {
+        this.child.stdout.on('end', function () {
             cb(this.stdout);
         });
 
-        child.stdin.write("position fen " + fen + "\ngo movetime " + delay + "\n");
+        this.child.stdin.write("position fen " + fen + "\ngo movetime " + delay + "\n");
 
         this.loop = setInterval(() => {
             cb(result);
         }, 1000);
+
+        setTimeout(() => {
+            this.child.stdin.end();
+        }, delay);
+
     }
 }
 
@@ -57,15 +63,13 @@ app.get('/', (req, res) => {
 });
 
 
-let engine;
+let engine = new EngineConnect(STOCKFISH_PATH, []);
 
 io.on('connection', (socket) => {
     console.log('a user connected', socket.id);
 
     socket.on('new_move', (data) => {
-        engine = new EngineConnect('/usr/games/stockfish', []);
-        // engine = new EngineConnect(__dirname + '/stockfish', []);
-        engine.run(data.FEN, 20000, (bestmove) => {
+        engine.findBestMove(data.FEN, 20000, (bestmove) => {
             socket.emit('on_result', {fen: data.FEN, data: bestmove});
         });
     });
