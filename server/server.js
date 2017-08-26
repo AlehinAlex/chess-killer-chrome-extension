@@ -8,7 +8,8 @@ const spawn = require('child_process').spawn;
 
 
 class EngineConnect {
-    constructor(cmd, args) {
+    constructor(id, cmd, args) {
+        this.id = id;
         this.cmd = cmd;
         this.args = args;
         this.child = spawn(this.cmd, this.args);
@@ -16,6 +17,7 @@ class EngineConnect {
 
     findBestMove(fen, delay, cb) {
         let result = '';
+        const id = this.id;
         if (this.loop) {
             clearInterval(this.loop);
         }
@@ -27,11 +29,13 @@ class EngineConnect {
 
         this.child.stdout.on('end', function () {
             cb(this.stdout);
+            console.log('on->end ID:',id);
         });
 
         this.child.stdin.write("position fen " + fen + "\ngo movetime " + delay + "\n");
 
         this.loop = setInterval(() => {
+            console.log('loop ID:',id);
             cb(result);
         }, 1000);
 
@@ -63,13 +67,15 @@ app.get('/', (req, res) => {
 });
 
 
-let engine = new EngineConnect(STOCKFISH_PATH, []);
+
 
 io.on('connection', (socket) => {
     console.log('a user connected', socket.id);
 
+    let engine = new EngineConnect(socket.id, STOCKFISH_PATH, []);
+
     socket.on('new_move', (data) => {
-        engine.findBestMove(data.FEN, 20000, (bestmove) => {
+        engine.findBestMove(data.FEN, 5000, (bestmove) => {
             socket.emit('on_result', {fen: data.FEN, data: bestmove});
         });
     });
