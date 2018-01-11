@@ -2,25 +2,21 @@ const app = require('express')();
 const https = require('https');
 const fs = require('fs');
 const PORT = 5000;
-const STOCKFISH_PATH = '/usr/games/stockfish';
-// const STOCKFISH_PATH = __dirname + '/stockfish';
+const DELAY = 5000;
+// const STOCKFISH_PATH = '/usr/games/stockfish';
+const STOCKFISH_PATH = __dirname + '/stockfish';
 const spawn = require('child_process').spawn;
 
 
 class EngineConnect {
-    constructor(id, cmd, args) {
+    constructor(id, cmd, args, callback) {
         this.id = id;
         this.cmd = cmd;
         this.args = args;
         this.child = spawn(this.cmd, this.args);
-    }
+        this.fen = '';
 
-    findBestMove(fen, delay, cb) {
         let result = '';
-        const id = this.id;
-        if (this.loop) {
-            clearInterval(this.loop);
-        }
 
         this.child.stdout.on('data', function (buffer) {
             this.stdout += buffer.toString();
@@ -28,21 +24,23 @@ class EngineConnect {
         });
 
         this.child.stdout.on('end', function () {
-            cb(this.stdout);
-            console.log('on->end ID:',id);
+            callback(this.stdout);
+            console.log('on->end ID:', id);
         });
 
-        this.child.stdin.write("position fen " + fen + "\ngo movetime " + delay + "\n");
-
+        let previousResult = '';
         this.loop = setInterval(() => {
-            console.log('loop ID:',id);
-            cb(result);
+            if(previousResult !== result){
+                console.log('loop ID:', id, result);
+                callback(result);
+                previousResult = result;
+            }
         }, 1000);
+    }
 
-        // setTimeout(() => {
-        //     this.child.stdin.end();
-        // }, delay);
-
+    findBestMove(fen, delay) {
+        this.fen = fen;
+        this.child.stdin.write("position fen " + fen + "\ngo movetime " + delay + "\n");
     }
 }
 
@@ -60,24 +58,23 @@ server.listen(PORT, () => {
 
 const io = require('socket.io')(server);
 
-let loop;
-
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
 
-
-
 io.on('connection', (socket) => {
     console.log('a user connected', socket.id);
 
-    let engine = new EngineConnect(socket.id, STOCKFISH_PATH, []);
+    let engine = new EngineConnect(socket.id, STOCKFISH_PATH, [], (bestmove) => {
+        console.log('bestmove', bestmove);
+        socket.emit('on_result', {
+            fen: engine.fen, data: bestmove
+        });
+    });
 
     socket.on('new_move', (data) => {
-        engine.findBestMove(data.FEN, 5000, (bestmove) => {
-            socket.emit('on_result', {fen: data.FEN, data: bestmove});
-        });
+        engine.findBestMove(data.FEN, 'infinity');
     });
 
     socket.on('disconnect', () => {
